@@ -24,27 +24,25 @@ public class Service {
 
     Audit audit = Audit.getInstance();
 
-    private Set<Vehicle> vehicles;
-    private Set<Car> cars;
-    private Set<Motorcycle> motorcycles;
-    private Set<Bicycle> bicycles;
+    private Set<Vehicle> vehicles = new LinkedHashSet<>();
+    private Set<Car> cars = new TreeSet<>(new VehicleSortByHP());
+    private Set<Motorcycle> motorcycles = new TreeSet<>(new VehicleSortByManufacturerPrice());
+    private Set<Bicycle> bicycles = new TreeSet<>(new VehicleSortByHourlyRate());
 
-    private Set<Customer> rental_customers;
-    private Set<Review> rental_reviews;
-    private List<Contract> rental_contracts;
-    private List<Accident> accidents;
+    private Set<Customer> rental_customers = new LinkedHashSet<>();
+    private Set<Review> rental_reviews = new LinkedHashSet<>();
+    private List<Contract> rental_contracts = new LinkedList<>();
+    private List<Accident> accidents = new LinkedList<>();
+
+
+
+
 
     Service() {
-        this.vehicles = new LinkedHashSet<>();
-        this.cars = new TreeSet<>(new VehicleSortByHP());
-        this.motorcycles = new TreeSet<>(new VehicleSortByManufacturerPrice());
-        this.bicycles = new TreeSet<>(new VehicleSortByHourlyRate());
-        this.rental_customers = new LinkedHashSet<>();
-        this.rental_reviews = new LinkedHashSet<>();
-        this.rental_contracts = new LinkedList<>();
-        this.accidents = new LinkedList<>();
+
 
     }
+
 
     // Getters for each list/set
     public Set<Vehicle> getVehicles() {
@@ -79,6 +77,37 @@ public class Service {
         return accidents;
     }
 
+    public void setVehicles(Set<Vehicle> vehicles) {
+        this.vehicles = vehicles;
+    }
+
+    public void setCars(Set<Car> cars) {
+        this.cars = cars;
+    }
+
+    public void setMotorcycles(Set<Motorcycle> motorcycles) {
+        this.motorcycles = motorcycles;
+    }
+
+    public void setBicycles(Set<Bicycle> bicycles) {
+        this.bicycles = bicycles;
+    }
+
+    public void setRental_customers(Set<Customer> rental_customers) {
+        this.rental_customers = rental_customers;
+    }
+
+    public void setRental_reviews(Set<Review> rental_reviews) {
+        this.rental_reviews = rental_reviews;
+    }
+
+    public void setRental_contracts(List<Contract> rental_contracts) {
+        this.rental_contracts = rental_contracts;
+    }
+
+    public void setAccidents(List<Accident> accidents) {
+        this.accidents = accidents;
+    }
 
     // Add and show services for each list of objects
     public void addVehicle(Vehicle v) throws IOException {

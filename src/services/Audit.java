@@ -1,12 +1,15 @@
 package services;
 
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.time.LocalDateTime;
+import java.time.Period;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 
 public class Audit {
-    private FileWriter outputFile;
+    private FileWriter csvWriter;
     final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private static Audit instance = null;
     public static Audit getInstance() {
@@ -17,26 +20,36 @@ public class Audit {
     }
 
     public Audit() {
-        try{
-            outputFile = new FileWriter("src/data/audit.csv");
-            outputFile.append("Action");
-            outputFile.append(",");
-            outputFile.append("Date");
-            outputFile.append("\n");
-            outputFile.flush();
-        }catch (IOException e){
-            System.out.println("Error with audit file.");
-            e.printStackTrace();
+        String pathToCsv = "src/data/audit.csv";
+        File csvFile = new File(pathToCsv);
+        if (csvFile.isFile()) {
+            try {
+                csvWriter = new FileWriter("audit.csv", true);
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        } else {
+
+            try {
+                csvWriter = new FileWriter("audit.csv");
+                csvWriter.append("Action");
+                csvWriter.append(",");
+                csvWriter.append("Timestamp");
+                csvWriter.append("\n");
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
+
     }
 
     public void logServiceAction(String action) throws IOException {
-        outputFile.append(action);
-        outputFile.append(",");
-        outputFile.append(formatter.format(LocalDateTime.now()));
-        outputFile.append("\n");
-        outputFile.flush();
-
+        csvWriter.append(action);
+        csvWriter.append(",");
+        csvWriter.append(formatter.format(LocalDateTime.now()));
+        csvWriter.append("\n");
+        csvWriter.flush();
     }
 
 }

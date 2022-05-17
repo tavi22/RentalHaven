@@ -4,9 +4,9 @@ import model.product.types.CarType;
 
 public class Car extends Vehicle implements Product {
     private static int counter = 0;
-    private final String id;
+    private String id;
     private final CarType carType;
-    private final String engineType;
+    private String engineType;
     private final double fuelConsumption;
     private final int seats;
 
@@ -35,6 +35,14 @@ public class Car extends Vehicle implements Product {
 
     public int getSeats() {
         return seats;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void setEngineType(String engineType) {
+        this.engineType = engineType;
     }
 
     @Override
