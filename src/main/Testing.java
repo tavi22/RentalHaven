@@ -12,7 +12,7 @@ import java.util.List;
 
 public class Testing {
     public static void main(String[] args) throws IOException {
-        Service service = Service.getInstance();
+        Service new_serv = Service.getInstance();
         List<Vehicle> vehicleList = new LinkedList<>();
 
         for (int i = 0; i < 2; i++) {
@@ -22,13 +22,10 @@ public class Testing {
 
             } else
                 car = new Motorcycle(new Make("Ford", "Focus", "USA", 2010),"nn",100,100,100,150, true, MotorcycleType.SPORT,"internal_combustion", 2);
-            Customer customer = service.readNewCustomer();
-            Contract contract = service.rentVehicle(customer, car, 100);
-            double fee = service.returnVehicle(customer, car, contract);
-            contract.setLateFee(fee);
+
             vehicleList.add(car);
-            service.addMotorcycle(car);
-            service.readNewBicycle();
+            new_serv.addMotorcycle(car);
+            new_serv.readNewBicycle();
         }
         System.out.println(vehicleList.get(0).getClass().getSimpleName());
 
