@@ -9,13 +9,13 @@ public class Bicycle extends Vehicle implements Product {
     private final BicycleType bicycleType;
     private String propulsion = "Normal";
 
-    public Bicycle(Make make, String color, int horsepower, int topSpeed, double price, double pricePerHour, boolean available, BicycleType bicycleType, String propulsion) {
+    public Bicycle(Make make, String color, int horsepower, int topSpeed, double price, double  pricePerDay, boolean available, BicycleType bicycleType, String propulsion) {
 
-        super(make, color, horsepower, topSpeed, price, pricePerHour, available);
+        super(make, color, horsepower, topSpeed, price,  pricePerDay, available);
         this.bicycleType = bicycleType;
         this.propulsion = propulsion;
 
-        this.id = "RH_RB" + counter;
+        this.id = "RH_RB#" + counter;
         counter++;
     }
 
@@ -49,10 +49,11 @@ public class Bicycle extends Vehicle implements Product {
 
     @Override
     public String description() {
-        return "Rental Bicycle" +
+        return "Rental Bicycle\n" +
+                super.toString() +
                 "\nType: " + this.bicycleType +
                 "\nPropulsion: " + this.propulsion +
-                "\nCost to rent: " + this.getRentalPrice() + " per day";
+                "\nCost to rent: $" + this.getRentalPrice() + " per day";
 
     }
 

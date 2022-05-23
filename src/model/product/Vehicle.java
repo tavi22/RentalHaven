@@ -1,6 +1,8 @@
 package model.product;
 
-public abstract class Vehicle {
+public class Vehicle {
+    private static int counter = 0;
+    private String id;
     protected Make make;
     protected String color;
     protected int horsepower, topSpeed;
@@ -19,6 +21,9 @@ public abstract class Vehicle {
         this.manufacturerPrice = price;
         this.pricePerDay = pricePerDay;
         this.available = available;
+
+        this.id = "Veh#" + counter;
+        counter++;
     }
 
     public Make getMake() {
@@ -54,6 +59,10 @@ public abstract class Vehicle {
         this.topSpeed = topSpeed;
     }
 
+    public void setId(String id) {
+        this.id = id;
+    }
+
     public double getPricePerDay() {
         return pricePerDay;
     }
@@ -74,28 +83,30 @@ public abstract class Vehicle {
         this.available = true;
     }
 
+    public int get_count(){
+        return counter;
+    }
+
     public String getCode() {
         return String.format("rental_haven#" + hashCode());
     }
 
     public String description() {
-        return "Rental Vehicle";
+        return this.toString();
     }
 
     public String getId() {
-        return "Vehicle";
+        return this.id;
     }
 
     @Override
     public String toString() {
-        return "Vehicle{" +
-                "make=" + make +
-                ", color='" + color + '\'' +
-                ", horsepower=" + horsepower +
-                ", topSpeed=" + topSpeed +
-                ", manufacturerPrice=" + manufacturerPrice +
-                ", pricePerHour=" + pricePerDay +
-                ", available=" + available +
-                '}';
+        return "Make: " + make + "\n" +
+                "Color: " + color + "\n" +
+                "Horsepower: " + horsepower + "\n" +
+                "TopSpeed: " + topSpeed + "\n" +
+                "ManufacturerPrice: " + manufacturerPrice + "\n" +
+                "PricePerHour: " + pricePerDay + "\n" +
+                "Available: " + available;
     }
 }

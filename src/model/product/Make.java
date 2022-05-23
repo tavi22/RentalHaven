@@ -27,6 +27,16 @@ public class Make {
         this.model = model;
     }
 
+    @Override
+    public String toString() {
+        return "Make{" +
+                "name='" + name + '\'' +
+                ", model='" + model + '\'' +
+                ", base='" + base + '\'' +
+                ", year=" + year +
+                '}';
+    }
+
     public String getBase() {
         return base;
     }

@@ -38,6 +38,10 @@ public class Customer {
         counter++;
     }
 
+    public int get_count() {
+        return counter;
+    }
+
     public String getId() {
         return id;
     }
@@ -97,8 +101,6 @@ public class Customer {
                 ", fullName='" + fullName + '\'' +
                 ", phoneNumber='" + phoneNumber + '\'' +
                 ", address='" + address +
-                ", contracts=" + contracts.size() +
-                ", accidents=" + accidents.size() +
                 '}';
     }
 }

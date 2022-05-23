@@ -10,14 +10,14 @@ public class Car extends Vehicle implements Product {
     private final double fuelConsumption;
     private final int seats;
 
-    public Car(Make make, String color, int horsepower, int topSpeed, double price, double pricePerHour, boolean available, CarType carType, String engineType, double fuelConsumption, int seats) {
-        super(make, color, horsepower, topSpeed, price, pricePerHour, available);
+    public Car(Make make, String color, int horsepower, int topSpeed, double price, double pricePerDay, boolean available, CarType carType, String engineType, double fuelConsumption, int seats) {
+        super(make, color, horsepower, topSpeed, price, pricePerDay, available);
         this.carType = carType;
         this.engineType = engineType;
         this.fuelConsumption = fuelConsumption;
         this.seats = seats;
 
-        this.id = "RH_RC" + counter;
+        this.id = "RH_RC#" + counter;
         counter++;
     }
 
@@ -63,12 +63,13 @@ public class Car extends Vehicle implements Product {
 
     @Override
     public String description() {
-        return "Rental Car" +
+        return "Rental Car\n" +
+                super.toString() +
                 "\nType: " + this.carType +
                 "\nEngine Type: " + this.engineType +
                 "\nFuel Consumption: " + this.fuelConsumption +
                 "\nNumber of seats: " + this.seats +
-                "\nCost to rent: " + this.getRentalPrice() + " per day";
+                "\nCost to rent: $" + this.getRentalPrice() + " per day";
     }
 
     @Override

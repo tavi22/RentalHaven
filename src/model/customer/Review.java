@@ -18,6 +18,10 @@ public class Review {
         counter++;
     }
 
+    public int get_count() {
+        return counter;
+    }
+
     public Customer getCustomer() {
         return customer;
     }

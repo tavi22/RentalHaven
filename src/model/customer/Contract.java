@@ -67,6 +67,10 @@ public class Contract {
         return lateFee;
     }
 
+    public int get_count() {
+        return counter;
+    }
+
     public void setLateFee(double lateFee) {
         this.lateFee = lateFee;
     }

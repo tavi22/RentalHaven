@@ -1,8 +1,5 @@
 package services;
 
-import model.product.comparators.VehicleSortByHP;
-import model.product.comparators.VehicleSortByHourlyRate;
-import model.product.comparators.VehicleSortByManufacturerPrice;
 import model.customer.*;
 import model.product.*;
 import model.product.types.BicycleType;
@@ -10,9 +7,14 @@ import model.product.types.CarType;
 import model.product.types.MotorcycleType;
 
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.Period;
-import java.util.*;
+import java.util.List;
+import java.util.Scanner;
+import java.util.Set;
 
 public class Service {
     public static Service singleton = null;
@@ -24,22 +26,48 @@ public class Service {
 
     Audit audit = Audit.getInstance();
 
-    private Set<Vehicle> vehicles = new LinkedHashSet<>();
-    private Set<Car> cars = new TreeSet<>(new VehicleSortByHP());
-    private Set<Motorcycle> motorcycles = new TreeSet<>(new VehicleSortByManufacturerPrice());
-    private Set<Bicycle> bicycles = new TreeSet<>(new VehicleSortByHourlyRate());
+    private Set<Vehicle> vehicles;
+    private Set<Car> cars;
+    private Set<Motorcycle> motorcycles;
+    private Set<Bicycle> bicycles;
 
-    private Set<Customer> rental_customers = new LinkedHashSet<>();
-    private Set<Review> rental_reviews = new LinkedHashSet<>();
-    private List<Contract> rental_contracts = new LinkedList<>();
-    private List<Accident> accidents = new LinkedList<>();
+    private Set<Customer> rental_customers;
+    private Set<Review> rental_reviews;
+    private List<Contract> rental_contracts;
 
-
+    private VehicleDatabase vehicleDatabase = null;
+    private CarDatabase carDatabase = null;
+    private MotoDatabase motoDatabase = null;
+    private BikeDatabase bikeDatabase = null;
+    private CustomerDatabase customerDatabase = null;
+    private ReviewDatabase reviewDatabase = null;
+    private ContractDatabase contractDatabase = null;
 
 
 
     Service() {
+        Connection connection;
+        try {
+            connection = DriverManager.getConnection("jdbc:mysql://localhost:3306/jdbc_pao", "root", "paopassword");
+            this.vehicleDatabase = new VehicleDatabase(connection);
+            this.carDatabase = new CarDatabase(connection);
+            this.motoDatabase = new MotoDatabase(connection);
+            this.bikeDatabase = new BikeDatabase(connection);
+            this.customerDatabase = new CustomerDatabase(connection);
+            this.reviewDatabase = new ReviewDatabase(connection);
+            this.contractDatabase = new ContractDatabase(connection);
 
+        } catch (SQLException s) {
+            s.printStackTrace();
+        }
+
+        this.vehicles = vehicleDatabase.read();
+        this.cars = carDatabase.read();
+        this.motorcycles = motoDatabase.read();
+        this.bicycles = bikeDatabase.read();
+        this.rental_customers = customerDatabase.read();
+        this.rental_reviews = reviewDatabase.read();
+        this.rental_contracts = contractDatabase.read();
 
     }
 
@@ -73,10 +101,6 @@ public class Service {
         return rental_contracts;
     }
 
-    public List<Accident> getAccidents() {
-        return accidents;
-    }
-
     public void setVehicles(Set<Vehicle> vehicles) {
         this.vehicles = vehicles;
     }
@@ -105,13 +129,11 @@ public class Service {
         this.rental_contracts = rental_contracts;
     }
 
-    public void setAccidents(List<Accident> accidents) {
-        this.accidents = accidents;
-    }
 
     // Add and show services for each list of objects
     public void addVehicle(Vehicle v) throws IOException {
         this.vehicles.add(v);
+        this.vehicleDatabase.create(v);
         audit.logServiceAction("addVehicle");
     }
     public void showVehicles() {
@@ -123,7 +145,16 @@ public class Service {
 
     public void addCar(Car c) throws IOException {
         this.cars.add(c);
-        this.vehicles.add(c);
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Chose what type of vehicle the car is (Type -1 for new Vehicle): ");
+        int vehicle_id = scanner.nextInt();
+        scanner.next();
+        if (vehicle_id == -1) {
+            Vehicle newVehicle = this.readNewVehicle();
+            this.addVehicle(newVehicle);
+            vehicle_id = newVehicle.get_count();
+        }
+        this.carDatabase.create(c, vehicle_id);
         audit.logServiceAction("addCar");
     }
     public void showCars() {
@@ -135,7 +166,16 @@ public class Service {
 
     public void addMotorcycle(Motorcycle m) throws IOException {
         this.motorcycles.add(m);
-        this.vehicles.add(m);
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Chose what type of vehicle the motorcycle is (Type -1 for new Vehicle): ");
+        int vehicle_id = scanner.nextInt();
+        scanner.next();
+        if (vehicle_id == -1) {
+            Vehicle newVehicle = this.readNewVehicle();
+            this.addVehicle(newVehicle);
+            vehicle_id = newVehicle.get_count();
+        }
+        this.motoDatabase.create(m, vehicle_id);
         audit.logServiceAction("addMotorcycle");
     }
     public void showMotorcycles() {
@@ -147,7 +187,17 @@ public class Service {
 
     public void addBicycle(Bicycle b) throws IOException {
         this.bicycles.add(b);
-        this.vehicles.add(b);
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Chose what type of vehicle the bicycle is (Type -1 for new Vehicle): ");
+        int vehicle_id = scanner.nextInt();
+        scanner.next();
+
+        if (vehicle_id == -1) {
+            Vehicle newVehicle = this.readNewVehicle();
+            this.addVehicle(newVehicle);
+            vehicle_id = newVehicle.get_count();
+        }
+        this.bikeDatabase.create(b, vehicle_id);
         audit.logServiceAction("addBicycle");
 
     }
@@ -160,6 +210,7 @@ public class Service {
 
     public void addCustomer(Customer c) throws IOException {
         this.rental_customers.add(c);
+        this.customerDatabase.create(c);
         audit.logServiceAction("addCustomer");
 
     }
@@ -172,6 +223,16 @@ public class Service {
 
     public void addReview(Review r) throws IOException {
         this.rental_reviews.add(r);
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Chose the user who added the review (Type -1 for new user): ");
+        int customer_id = scanner.nextInt();
+        scanner.next();
+
+        if (customer_id == -1) {
+            Customer newCustomer = this.readNewCustomer();
+            customer_id = newCustomer.get_count();
+        }
+        this.reviewDatabase.create(r, customer_id);
         audit.logServiceAction("addReview");
 
     }
@@ -184,6 +245,24 @@ public class Service {
 
     public void addContract(Contract c) throws IOException {
         this.rental_contracts.add(c);
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Choose customer and vehicle ids (Type -1 for new user/vehicle): ");
+        int customer_id = scanner.nextInt();
+        scanner.next();
+
+        if (customer_id == -1) {
+            Customer newCustomer = this.readNewCustomer();
+            customer_id = newCustomer.get_count();
+        }
+        int vehicle_id = scanner.nextInt();
+        scanner.next();
+
+        if (vehicle_id == -1) {
+            Vehicle newVehicle = this.readNewVehicle();
+            this.addVehicle(newVehicle);
+            vehicle_id = newVehicle.get_count();
+        }
+        this.contractDatabase.create(c, customer_id, vehicle_id);
         audit.logServiceAction("addContract");
     }
     public void showContract() {
@@ -193,31 +272,30 @@ public class Service {
         }
     }
 
-    public void addAccident(Accident a) { this.accidents.add(a); }
-    public void showAccidents() {
-        for(Accident accident : this.accidents) {
-            System.out.println(accident);
-            System.out.println("====================");
-        }
-    }
-
     // Create new instance for each object by reading the info from console
-    public Car readNewCar() throws IOException {
+    public Vehicle readNewVehicle() {
         Scanner scanner = new Scanner(System.in);
         System.out.println("Make name: "); String name = scanner.nextLine();
         System.out.println("Model: "); String model = scanner.nextLine();
         System.out.println("Base: "); String base = scanner.nextLine();
         System.out.println("Year: "); int year = scanner.nextInt();
-        Make newMake = new Make(name, model, base, year);
+        Make make = new Make(name, model, base, year);
         System.out.println("Color: "); scanner.next(); String color = scanner.nextLine();
         System.out.println("Horsepower: "); int horsepower = scanner.nextInt();
         System.out.println("TopSpeed: "); int top = scanner.nextInt();
         System.out.println("Price: "); double price = scanner.nextDouble();
+        System.out.println("PricePerDay: "); double pDay = scanner.nextDouble();
+
+        return new Vehicle(make, color, horsepower, top, price, pDay, true);
+
+    }
+    public Car readNewCar() throws IOException {
+        Scanner scanner = new Scanner(System.in);
+        Vehicle vehicle = readNewVehicle();
         System.out.println("Type: "); String type = scanner.nextLine();
         System.out.println("Engine: "); String engine = scanner.nextLine();
         System.out.println("Fuel Consumption: "); double fuelC = scanner.nextDouble();
         System.out.println("Seats: "); int seats = scanner.nextInt();
-        System.out.println("Price Per Hour: "); double pHour = scanner.nextDouble();
 
 
         CarType tp = switch (type.toUpperCase()) {
@@ -235,24 +313,19 @@ public class Service {
         audit.logServiceAction("readNewCar");
 
 
-        return new Car(newMake,color, horsepower,top, price, pHour, true, tp, engine, fuelC, seats);
+        return new Car(vehicle.getMake(),vehicle.getColor(), vehicle.getHorsepower(),
+                vehicle.getTopSpeed(), vehicle.getVehiclePrice(), vehicle.getPricePerDay(),
+                true, tp, engine, fuelC, seats);
     }
 
     public Motorcycle readNewMotorcycle() throws IOException {
         Scanner scanner = new Scanner(System.in);
-        System.out.println("Make name: "); String name = scanner.nextLine();
-        System.out.println("Model: "); String model = scanner.nextLine();
-        System.out.println("Base: "); String base = scanner.nextLine();
-        System.out.println("Year: "); int year = scanner.nextInt();
-        Make newMake = new Make(name, model, base, year);
-        System.out.println("Color: "); String color = scanner.nextLine();
-        System.out.println("Horsepower: "); int horsepower = scanner.nextInt();
-        System.out.println("TopSpeed: "); int top = scanner.nextInt();
-        System.out.println("Price: "); double price = scanner.nextDouble();
+        Vehicle vehicle = readNewVehicle();
+
         System.out.println("Type: "); String type = scanner.nextLine();
         System.out.println("Engine: "); String engine = scanner.nextLine();
         System.out.println("Wheels: "); int wheels = scanner.nextInt();
-        System.out.println("Price Per Hour: "); double pHour = scanner.nextDouble();
+
 
 
         MotorcycleType tp = switch (type.toUpperCase()) {
@@ -269,23 +342,16 @@ public class Service {
         audit.logServiceAction("readNewMotorcycle");
 
 
-        return new Motorcycle(newMake,color, horsepower,top, price, pHour,true, tp, engine, wheels);
+        return new Motorcycle(vehicle.getMake(),vehicle.getColor(), vehicle.getHorsepower(),
+                vehicle.getTopSpeed(), vehicle.getVehiclePrice(), vehicle.getPricePerDay(),
+                true, tp, engine, wheels);
     }
 
     public Bicycle readNewBicycle() throws IOException {
         Scanner scanner = new Scanner(System.in);
-        System.out.println("Make name: "); String name = scanner.nextLine();
-        System.out.println("Model: "); String model = scanner.nextLine();
-        System.out.println("Base: "); String base = scanner.nextLine();
-        System.out.println("Year: "); int year = scanner.nextInt();
-        Make newMake = new Make(name, model, base, year);
-        System.out.println("Color: "); scanner.next(); String color = scanner.nextLine();
-        System.out.println("Horsepower: "); int horsepower = scanner.nextInt();
-        System.out.println("TopSpeed: "); int top = scanner.nextInt();
-        System.out.println("Price: "); double price = scanner.nextDouble();
+        Vehicle vehicle = readNewVehicle();
         System.out.println("Type: "); scanner.next(); String type = scanner.nextLine();
         System.out.println("Propulsion: "); String propulsion = scanner.nextLine();
-        System.out.println("Price Per Hour: "); double pHour = scanner.nextDouble();
 
         BicycleType tp = switch (type.toUpperCase()) {
             case "ROAD" -> BicycleType.ROAD;
@@ -298,7 +364,9 @@ public class Service {
         };
 
         audit.logServiceAction("readNewBicycle");
-        return new Bicycle(newMake,color, horsepower,top, price, pHour,true, tp, propulsion);
+        return new Bicycle(vehicle.getMake(),vehicle.getColor(), vehicle.getHorsepower(),
+                vehicle.getTopSpeed(), vehicle.getVehiclePrice(), vehicle.getPricePerDay(),
+                true, tp, propulsion);
     }
 
     public Customer readNewCustomer() throws IOException {
@@ -316,20 +384,49 @@ public class Service {
         return new Customer(name, phone, address);
     }
 
-    public Review readNewReview(Customer customer) throws IOException {
+    public Review readNewReview() throws IOException {
         Scanner scanner = new Scanner(System.in);
+        Customer customer;
+        System.out.println("Enter user id (Type -1 for new user): "); int id = scanner.nextInt();
+        if (id == -1) {
+            customer = readNewCustomer();
+            this.addCustomer(customer);
+        } else
+            customer = findCustomerByID(id);
+
         System.out.println("Review Body: "); String body = scanner.nextLine();
         System.out.println("Rating: "); int rating = scanner.nextInt();
         System.out.println("Satisfied: (true/false)"); boolean sat = scanner.nextBoolean();
-
         audit.logServiceAction("readNewReview");
 
         return new Review(customer, body, rating, sat);
     }
 
-    public Contract readNewContract(Customer customer, Vehicle vehicle) throws IOException {
+    public Contract readNewContract() throws IOException {
         Scanner scanner = new Scanner(System.in);
+        Customer customer;
+        Vehicle vehicle;
+        System.out.println("Enter user and vehicle ids (Type -1 for new user/vehicle): ");
+        int customer_id = scanner.nextInt();
+        scanner.next();
+
+        if (customer_id == -1) {
+            customer = readNewCustomer();
+            this.addCustomer(customer);
+        } else
+            customer = findCustomerByID(customer_id);
+
+        int vehicle_id = scanner.nextInt();
+        scanner.next();
+
+        if (vehicle_id == -1) {
+            vehicle = readNewVehicle();
+            this.addVehicle(vehicle);
+        } else
+            vehicle = findVehicleByID(vehicle_id);
+
         System.out.println("Days Rented: "); int nr = scanner.nextInt();
+        scanner.next();
         double total = vehicle.getPricePerDay() * nr;
 
         audit.logServiceAction("readNewContract");
@@ -342,8 +439,36 @@ public class Service {
     }
 
     // Rent and return vehicle services
-    public Contract rentVehicle(Customer customer, Vehicle vehicle, int daysRented) throws IOException {
+    public Contract rentVehicle() throws IOException {
         double pr = 0;
+        Customer customer;
+        Vehicle vehicle;
+        int daysRented;
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Enter user/vehicle ids (Type -1 for new user/vehicle): ");
+        int customer_id = scanner.nextInt();
+        scanner.next();
+
+        if (customer_id == -1) {
+            customer = readNewCustomer();
+            this.addCustomer(customer);
+        } else
+            customer = findCustomerByID(customer_id);
+
+        int vehicle_id = scanner.nextInt();
+        scanner.next();
+
+        if (vehicle_id == -1) {
+            vehicle = readNewVehicle();
+            this.addVehicle(vehicle);
+        } else
+            vehicle = findVehicleByID(vehicle_id);
+
+        System.out.println("Enter days rented: ");
+        daysRented = scanner.nextInt();
+        scanner.next();
+
+
         if (vehicle.isAvailable() && daysRented > 0) {
             pr = vehicle.getPricePerDay() * daysRented;
             if (customer.getAccidents() != null) {
@@ -376,7 +501,26 @@ public class Service {
         return null;
     }
 
-    public double returnVehicle(Customer customer, Vehicle vehicle, Contract contract) throws IOException {
+    public void returnVehicle() throws IOException {
+        Contract contract;
+        Customer customer;
+        Vehicle vehicle;
+        int daysRented;
+        Scanner scanner = new Scanner(System.in);
+        System.out.println("Enter user/vehicle/contract ids: ");
+        int customer_id = scanner.nextInt();
+        scanner.next();
+
+        customer = findCustomerByID(customer_id);
+        int vehicle_id = scanner.nextInt();
+        scanner.next();
+
+        vehicle = findVehicleByID(vehicle_id);
+        int contract_id = scanner.nextInt();
+        scanner.next();
+
+        contract = findContractByID(contract_id);
+
         if (!vehicle.isAvailable()) {
             double fee = 0;
             if (contract.getDueDate().isBefore(LocalDate.now())) {
@@ -391,16 +535,13 @@ public class Service {
             System.out.println("====================");
             audit.logServiceAction("returnVehicle");
 
-            return fee;
-
         }
-        return 0;
     }
 
 
-    public Vehicle findVehicleByID(String id, Set<Vehicle> vehicles) {
+    public Vehicle findVehicleByID(int id) {
         for (Vehicle vehicle : vehicles) {
-            if (Objects.equals(vehicle.getId(), id)) {
+            if (vehicle.get_count() == id) {
                 System.out.println("!!Vehicle Found!!");
                 return vehicle;
             }
@@ -409,9 +550,9 @@ public class Service {
         return null;
     }
 
-    public Customer findCustomerByID(String id) {
+    public Customer findCustomerByID(int id) {
         for(Customer customer : rental_customers) {
-            if (Objects.equals(customer.getId(), id)) {
+            if (customer.get_count() == id) {
                 System.out.println("!!Customer Found!!");
                 return customer;
             }
@@ -420,9 +561,9 @@ public class Service {
         return null;
     }
 
-    public Contract findContractByID(String id) {
+    public Contract findContractByID(int id) {
         for(Contract contract : rental_contracts) {
-            if (Objects.equals(contract.getContract_id(), id)) {
+            if (contract.get_count() == id) {
                 System.out.println("!!Contract Found!!");
                 return contract;
             }
@@ -431,9 +572,9 @@ public class Service {
         return null;
     }
 
-    public Review findReviewByID(String id) {
+    public Review findReviewByID(int id) {
         for(Review review : rental_reviews) {
-            if (Objects.equals(review.getId(), id)) {
+            if (review.get_count() == id) {
                 System.out.println("!!Review Found!!");
                 return review;
             }
